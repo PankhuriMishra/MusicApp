@@ -12,6 +12,9 @@ function offlineServiceWorker(): Plugin {
         './index.html',
         './favicon.svg',
         './manifest.webmanifest',
+        './apple-touch-icon.png',
+        './icon-192.png',
+        './icon-512.png',
         ...Object.keys(bundle)
           .filter((file) => file !== 'index.html' && /\.(?:js|css|html|svg|webmanifest)$/.test(file))
           .map((file) => `./${file}`),
