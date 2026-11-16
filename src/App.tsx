@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { exams, getSwaraFrequencies, noteNames, practiceTopics, tonics, type ExamLevel } from './music'
 import { createLocalProfile, readLocalProfile, resetLocalProfile, verifyLocalPin, type LocalProfile } from './localProfile'
 import { clearLocalRecordings, type LocalRecording } from './localRecordings'
+import { getRagaSemitones, prarambhikAlankars, prarambhikRagas, prarambhikSyllabusSections, prarambhikTalas } from './prarambhikSyllabus'
 import { useLocalRecorder } from './useLocalRecorder'
 import { usePracticeAudio } from './usePracticeAudio'
 import './App.css'
@@ -9,10 +10,13 @@ import './App.css'
 type View = 'today' | 'syllabus' | 'practice' | 'progress'
 type PracticeStats = { minutes: number; sessions: number }
 type TopicsByExam = Record<ExamLevel, string[]>
+type RagaPracticeLog = Record<string, string[]>
 
 const statsKey = 'sur-practice-stats'
 const examKey = 'sur-exam'
 const topicsKey = 'sur-syllabus-topics'
+const ragaLogKey = 'sur-prarambhik-raga-practice'
+const ragaGoalKey = 'sur-prarambhik-raga-daily-goal'
 
 function App() {
   const [storedProfile] = useState(() => {
@@ -164,6 +168,34 @@ function readTopics(): TopicsByExam {
   return Object.fromEntries(exams.map(({ id }) => [id, [...practiceTopics]])) as TopicsByExam
 }
 
+function localDayKey(date = new Date()) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function readRagaPracticeLog(): RagaPracticeLog {
+  try {
+    const stored = localStorage.getItem(ragaLogKey)
+    if (!stored) return {}
+    const parsed: unknown = JSON.parse(stored)
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return {}
+    return Object.fromEntries(
+      Object.entries(parsed).filter((entry): entry is [string, string[]] =>
+        Array.isArray(entry[1]) && entry[1].every((date) => typeof date === 'string'),
+      ),
+    )
+  } catch {
+    return {}
+  }
+}
+
+function readRagaDailyGoal() {
+  const saved = Number(localStorage.getItem(ragaGoalKey))
+  return Number.isInteger(saved) && saved >= 1 && saved <= prarambhikRagas.length ? saved : 2
+}
+
 function PracticeApp({ studentName, onLock }: { studentName: string; onLock: () => void }) {
   const [view, setView] = useState<View>('today')
   const [todayDate] = useState(() => new Intl.DateTimeFormat('en-IN', { weekday: 'short', day: 'numeric', month: 'short' }).format(new Date()))
@@ -171,6 +203,8 @@ function PracticeApp({ studentName, onLock }: { studentName: string; onLock: () 
   const [topicsByExam, setTopicsByExam] = useState<TopicsByExam>(readTopics)
   const [newTopic, setNewTopic] = useState('')
   const [stats, setStats] = useState<PracticeStats>(readStats)
+  const [ragaPracticeLog, setRagaPracticeLog] = useState<RagaPracticeLog>(readRagaPracticeLog)
+  const [ragaDailyGoal, setRagaDailyGoal] = useState(readRagaDailyGoal)
   const [tonicIndex, setTonicIndex] = useState(7)
   const [targetNote, setTargetNote] = useState(0)
   const [practiceNote, setPracticeNote] = useState(0)
@@ -179,6 +213,11 @@ function PracticeApp({ studentName, onLock }: { studentName: string; onLock: () 
 
   const selectedExam = exams.find((item) => item.id === exam) ?? exams[0]
   const currentTopics = topicsByExam[exam]
+  const todayKey = localDayKey()
+  const practicedRagaIdsToday = prarambhikRagas
+    .filter((raga) => ragaPracticeLog[raga.id]?.includes(todayKey))
+    .map((raga) => raga.id)
+  const everPracticedRagaCount = prarambhikRagas.filter((raga) => (ragaPracticeLog[raga.id]?.length ?? 0) > 0).length
   const swaraFrequencies = getSwaraFrequencies(tonics[tonicIndex].frequency)
   const targetFrequency = swaraFrequencies[targetNote]
   const cents = audio.pitch ? 1200 * Math.log2(audio.pitch / targetFrequency) : null
@@ -204,6 +243,21 @@ function PracticeApp({ studentName, onLock }: { studentName: string; onLock: () 
     const next = { ...topicsByExam, [exam]: currentTopics.filter((_, itemIndex) => itemIndex !== index) }
     setTopicsByExam(next)
     localStorage.setItem(topicsKey, JSON.stringify(next))
+  }
+
+  function toggleRagaPracticed(ragaId: string) {
+    const dates = ragaPracticeLog[ragaId] ?? []
+    const updatedDates = dates.includes(todayKey)
+      ? dates.filter((date) => date !== todayKey)
+      : [...dates, todayKey].sort()
+    const next = { ...ragaPracticeLog, [ragaId]: updatedDates }
+    setRagaPracticeLog(next)
+    localStorage.setItem(ragaLogKey, JSON.stringify(next))
+  }
+
+  function changeRagaDailyGoal(goal: number) {
+    setRagaDailyGoal(goal)
+    localStorage.setItem(ragaGoalKey, String(goal))
   }
 
   function completeSession() {
@@ -293,7 +347,16 @@ function PracticeApp({ studentName, onLock }: { studentName: string; onLock: () 
 
         {view === 'practice' && (
           <section className="content-page">
-            <PageHeading eyebrow="YOUR PRACTICE ROOM" title="Find your sur" detail="Listen, settle into your Sa, and sing along at your own pace." />
+            <PageHeading eyebrow="YOUR PRACTICE ROOM · PRARAMBHIK" title="A little riyaaz, every day" detail="Explore the ragas, listen to the phrases, and keep track of the music you practise." />
+            <PrarambhikPractice
+              practicedToday={practicedRagaIdsToday}
+              practicedTotal={everPracticedRagaCount}
+              dailyGoal={ragaDailyGoal}
+              tonic={tonics[tonicIndex].frequency}
+              onToggleRaga={toggleRagaPracticed}
+              onChangeGoal={changeRagaDailyGoal}
+              onPlayPhrase={(phrase) => void audio.playSequence(getRagaSemitones(phrase), tonics[tonicIndex].frequency)}
+            />
             <div className="practice-grid">
               <div className="practice-card scale-card">
                 <div className="card-kicker"><span className="live-dot" /> SWARA PRACTICE</div>
@@ -380,6 +443,192 @@ function PracticeApp({ studentName, onLock }: { studentName: string; onLock: () 
 
         <footer className="app-footer"><span>Made for steady, joyful practice.</span><span>Practice content is a learning aid, not official exam guidance.</span></footer>
       </main>
+    </div>
+  )
+}
+
+function PrarambhikPractice({ practicedToday, practicedTotal, dailyGoal, tonic, onToggleRaga, onChangeGoal, onPlayPhrase }: {
+  practicedToday: string[]
+  practicedTotal: number
+  dailyGoal: number
+  tonic: number
+  onToggleRaga: (ragaId: string) => void
+  onChangeGoal: (goal: number) => void
+  onPlayPhrase: (phrase: string) => void
+}) {
+  const [expandedRaga, setExpandedRaga] = useState('durga')
+  const progressPercent = Math.min(100, (practicedToday.length / dailyGoal) * 100)
+
+  return (
+    <div className="prarambhik-plan">
+      <div className="syllabus-summary">
+        {prarambhikSyllabusSections.map((section) => (
+          <div className="syllabus-stat" key={section.title}>
+            <span className="stat-label">{section.title}</span>
+            <strong>{section.count}<small>{section.title === 'Swar Gyan' ? ' area' : ` ${section.title.toLowerCase()}`}</small></strong>
+          </div>
+        ))}
+      </div>
+
+      <section className="daily-raga-plan">
+        <div className="daily-plan-head">
+          <div>
+            <p className="eyebrow">TODAY'S RAGA RIYAAZ</p>
+            <h2>{practicedToday.length >= dailyGoal ? 'Lovely work — your daily goal is done.' : 'One phrase at a time.'}</h2>
+            <p>{practicedToday.length} of {dailyGoal} ragas practised today <span>·</span> {practicedTotal} of {prarambhikRagas.length} explored so far</p>
+          </div>
+          <label className="daily-goal">
+            <span>Daily goal</span>
+            <select aria-label="Daily raga goal" value={dailyGoal} onChange={(event) => onChangeGoal(Number(event.target.value))}>
+              {prarambhikRagas.map((_, index) => <option value={index + 1} key={index}>{index + 1} {index === 0 ? 'raga' : 'ragas'}</option>)}
+            </select>
+          </label>
+        </div>
+        <div className="daily-progress-track" role="progressbar" aria-label="Today's raga goal" aria-valuemin={0} aria-valuemax={dailyGoal} aria-valuenow={Math.min(practicedToday.length, dailyGoal)}>
+          <span style={{ width: `${progressPercent}%` }} />
+        </div>
+      </section>
+
+      <section className="raga-section" aria-labelledby="raga-section-title">
+        <div className="section-title-row">
+          <div>
+            <p className="eyebrow">THE RAGA LIST</p>
+            <h2 id="raga-section-title">Your Prarambhik ragas</h2>
+          </div>
+          <span className="section-count">{prarambhikRagas.length} ragas</span>
+        </div>
+        <div className="syllabus-caveat">
+          Starter list: Durga, Kafi, Khamaj, Bhimpalasi, Bageshri, Bhoop, and Desh. Please check names and swara phrases against your daughter's current syllabus book and teacher's version; the ABGMVM exam page does not publish this detailed list. Phrases here are common practice references, not a substitute for her bandish.
+          <a href="https://musicwithaditi.com/prarambhik-syllabusvocalinstrumental/" target="_blank" rel="noreferrer">List reference ↗</a>
+        </div>
+        <div className="raga-list">
+          {prarambhikRagas.map((raga, index) => {
+            const practiced = practicedToday.includes(raga.id)
+            return (
+              <details
+                className={`raga-card ${practiced ? 'raga-practiced' : ''}`}
+                key={raga.id}
+                open={expandedRaga === raga.id}
+                onToggle={(event) => {
+                  if (event.currentTarget.open) setExpandedRaga(raga.id)
+                  else if (expandedRaga === raga.id) setExpandedRaga('')
+                }}
+              >
+                <summary>
+                  <span className="raga-index">{String(index + 1).padStart(2, '0')}</span>
+                  <span className="raga-summary-name">{raga.name}{raga.aliases ? <small> · {raga.aliases}</small> : null}</span>
+                  <span className="raga-thaat">{raga.thaat} thaat</span>
+                  <span className={`raga-status ${practiced ? 'raga-status-done' : ''}`}>{practiced ? 'Practised today ✓' : 'Open raga +'}</span>
+                </summary>
+                <div className="raga-detail">
+                  <p className="raga-swara-note">{raga.swaras}</p>
+                  <div className="raga-phrase-grid">
+                    <RagaPhrase label="Aaroh" phrase={raga.aroha} onPlay={() => onPlayPhrase(raga.aroha)} />
+                    <RagaPhrase label="Avaroh" phrase={raga.avaroha} onPlay={() => onPlayPhrase(raga.avaroha)} />
+                    <RagaPhrase label="Pakad · common phrase" phrase={raga.pakad} onPlay={() => onPlayPhrase(raga.pakad)} />
+                  </div>
+                  <div className="raga-card-footer">
+                    <span>Sa reference: {tonics.find((note) => note.frequency === tonic)?.label ?? 'custom'} · generated tone</span>
+                    <button className={`button ${practiced ? 'button-outline' : 'button-dark'}`} type="button" onClick={() => onToggleRaga(raga.id)}>
+                      {practiced ? 'Undo today’s practice' : 'Mark practised today'}
+                    </button>
+                  </div>
+                </div>
+              </details>
+            )
+          })}
+        </div>
+      </section>
+
+      <section className="syllabus-detail-grid" aria-label="Other Prarambhik syllabus areas">
+        <EarTraining onPlaySequence={onPlayPhrase} />
+        <div className="syllabus-detail-card">
+          <p className="eyebrow">TAAL PRACTICE · 3 TAALAS</p>
+          <h2>Keep the taal</h2>
+          <p className="syllabus-detail-intro">Clap the sam, show taali and khali, and speak the theka. Teentaal: practise at madhya laya too.</p>
+          {prarambhikTalas.map((taal) => (
+            <div className="taal-row" key={taal.name}>
+              <div><strong>{taal.name}</strong><span>{taal.beats} matras · {taal.vibhag}</span></div>
+              <p>{taal.theka}</p>
+              <small>Sam: beat {taal.sam + 1} · Khali: beat {taal.khali + 1}</small>
+            </div>
+          ))}
+        </div>
+        <div className="syllabus-detail-card">
+          <p className="eyebrow">ALANKARS · 6 PATTERNS</p>
+          <h2>Warm up the swaras</h2>
+          <p className="syllabus-detail-intro">Use shuddha swaras in Bilawal; sing every pattern slowly up and back down.</p>
+          {prarambhikAlankars.map((alankar) => (
+            <div className="alankar-row" key={alankar.number}>
+              <span>{String(alankar.number).padStart(2, '0')}</span>
+              <div><strong>{alankar.pattern}</strong><small>{alankar.description}</small></div>
+            </div>
+          ))}
+        </div>
+        <div className="syllabus-detail-card swar-gyan-card">
+          <p className="eyebrow">SWAR GYAN</p>
+          <h2>Listen with care</h2>
+          <p>Recognise shuddha and komal swaras. Practise hearing the difference between bhajan, ghazal, and classical singing, as noted in your riyaz brief.</p>
+        </div>
+      </section>
+    </div>
+  )
+}
+
+function RagaPhrase({ label, phrase, onPlay }: { label: string; phrase: string; onPlay: () => void }) {
+  return (
+    <div className="raga-phrase">
+      <span>{label}</span>
+      <strong>{phrase}</strong>
+      <button type="button" className="phrase-play" onClick={onPlay}>▶ Hear phrase</button>
+    </div>
+  )
+}
+
+function EarTraining({ onPlaySequence }: { onPlaySequence: (phrase: string) => void }) {
+  const [target, setTarget] = useState<number | null>(null)
+  const [score, setScore] = useState(() => {
+    const saved = Number(localStorage.getItem('sur-prarambhik-ear-score'))
+    return Number.isInteger(saved) && saved > 0 ? saved : 0
+  })
+  const [feedback, setFeedback] = useState('')
+
+  function startRound() {
+    const bytes = crypto.getRandomValues(new Uint8Array(1))
+    const nextTarget = (bytes[0] % (noteNames.length - 1)) + 1
+    setTarget(nextTarget)
+    setFeedback('Listen for the note after Sa, then choose it.')
+    onPlaySequence(`S ${['S', 'R', 'G', 'M', 'P', 'D', 'N', 'S′'][nextTarget]}`)
+  }
+
+  function answer(choice: number) {
+    if (target === null) return
+    if (choice === target) {
+      const nextScore = score + 1
+      setScore(nextScore)
+      localStorage.setItem('sur-prarambhik-ear-score', String(nextScore))
+      setFeedback('That’s right — lovely listening.')
+    } else {
+      setFeedback('Not quite. Listen again, then try another swara.')
+    }
+    setTarget(null)
+  }
+
+  return (
+    <div className="syllabus-detail-card ear-training-card">
+      <p className="eyebrow">EAR TRAINING</p>
+      <h2>Which swara did you hear?</h2>
+      <p className="syllabus-detail-intro">Hear Sa followed by one mystery swara, then choose what you heard.</p>
+      <div className="ear-training-controls">
+        <button type="button" className="button button-dark" onClick={startRound}>▶ Play a round</button>
+        <span>Score · {score}</span>
+      </div>
+      {feedback && <p className="ear-feedback" role="status">{feedback}</p>}
+      <div className="ear-swara-options">
+        {noteNames.map((note, index) => (
+          <button type="button" key={`${note}-${index}`} onClick={() => answer(index)} disabled={target === null} aria-label={`I heard ${note}`}>{note}</button>
+        ))}
+      </div>
     </div>
   )
 }

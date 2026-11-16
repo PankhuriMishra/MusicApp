@@ -20,6 +20,8 @@ Create a production build with `npm run build`.
 - A one-time local profile and passcode screen; there is no online account or sign-in server.
 - Optional voice recordings saved in the browser's local IndexedDB storage, with playback, download, and delete controls.
 - A small practice-session counter, saved locally on the device.
+- A Prarambhik practice dashboard with seven starter raga cards, common aaroh/avaroh/pakad references, listenable swara phrases, daily raga goals, and day-by-day completion counts.
+- Prarambhik syllabus overview for three taalas, six alankars, and Swar Gyan.
 - An installable offline app shell after the first online visit, with no external font or runtime service dependency.
 - Responsive layouts for desktop and mobile.
 
@@ -33,7 +35,7 @@ Offline mode does not include ABGMVM's external website or other links; those re
 
 ## Syllabus note
 
-ABGMVM's examinations page currently shares examination schedules and links, not the detailed vocal syllabus for each level. The starter topics in Sur are general practice prompts, not official ABGMVM syllabus content. Students should confirm exam requirements with their teacher and the [official examinations page](https://abgmvm.org/examinations/). Sur is an independent practice aid and is not affiliated with ABGMVM.
+ABGMVM's examinations page currently shares examination schedules and links, not the detailed vocal syllabus for each level. The Prarambhik raga names in Sur are a starter list from [Music With Aditi's Prarambhik syllabus page](https://musicwithaditi.com/prarambhik-syllabusvocalinstrumental/), not an official ABGMVM publication. Raga phrases are common listening references and can vary by teacher and bandish. Confirm the full raga list and phrases with your teacher and current syllabus book, alongside the [official examinations page](https://abgmvm.org/examinations/). Starter topics in other exam levels are general prompts, not official syllabus content. Sur is an independent practice aid and is not affiliated with ABGMVM.
 
 ## Privacy and audio
 

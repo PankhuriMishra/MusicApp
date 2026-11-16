@@ -977,6 +977,461 @@
   gap: 14px;
 }
 
+.prarambhik-plan {
+  display: grid;
+  gap: 19px;
+  margin: 20px 0 24px;
+}
+
+.syllabus-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.syllabus-stat {
+  display: grid;
+  min-height: 79px;
+  align-content: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fffefa;
+  padding: 11px 13px;
+}
+
+.syllabus-stat > strong {
+  color: var(--deep-green);
+  font-family: var(--serif);
+  font-size: 23px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.syllabus-stat > strong small {
+  color: #90998f;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 9px;
+  font-weight: 400;
+}
+
+.daily-raga-plan {
+  border: 1px solid #e6e9df;
+  border-radius: 11px;
+  background: #f0f3eb;
+  padding: 17px 19px 15px;
+}
+
+.daily-plan-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.daily-plan-head h2,
+.section-title-row h2,
+.syllabus-detail-card h2 {
+  margin: 7px 0 0;
+  color: var(--deep-green);
+  font-family: var(--serif);
+  font-size: 19px;
+  font-weight: 500;
+}
+
+.daily-plan-head > div > p:last-child {
+  margin: 7px 0 0;
+  color: #788479;
+  font-size: 10px;
+}
+
+.daily-plan-head > div > p:last-child span {
+  margin: 0 4px;
+  color: #adb5aa;
+}
+
+.daily-goal {
+  display: grid;
+  flex: 0 0 auto;
+  gap: 5px;
+  color: #758174;
+  font-size: 9px;
+}
+
+.daily-goal select {
+  min-height: 31px;
+  border: 1px solid #dfe5da;
+  border-radius: 6px;
+  background: #fffefa;
+  color: #48604a;
+  font-size: 10px;
+  padding: 0 8px;
+}
+
+.daily-progress-track {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #dce5d8;
+  margin-top: 15px;
+}
+
+.daily-progress-track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #739775;
+  transition: width 180ms ease;
+}
+
+.raga-section {
+  display: grid;
+  gap: 12px;
+}
+
+.section-title-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.section-title-row h2 {
+  font-size: 23px;
+}
+
+.section-count {
+  border: 1px solid #e0e6dc;
+  border-radius: 20px;
+  background: #fffefa;
+  color: #758174;
+  font-size: 9px;
+  padding: 6px 10px;
+}
+
+.syllabus-caveat {
+  display: grid;
+  gap: 5px;
+  border: 1px solid #eee6d0;
+  border-radius: 8px;
+  background: #faf6e9;
+  color: #827a66;
+  font-size: 9px;
+  line-height: 1.65;
+  padding: 10px 12px;
+}
+
+.syllabus-caveat a {
+  width: max-content;
+  color: #617758;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.syllabus-caveat a:hover {
+  text-decoration: underline;
+}
+
+.raga-list {
+  display: grid;
+  gap: 7px;
+}
+
+.raga-card {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fffefa;
+}
+
+.raga-card[open] {
+  border-color: #d7e1d3;
+  box-shadow: 0 4px 14px #345b4b08;
+}
+
+.raga-card > summary {
+  display: flex;
+  min-height: 49px;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  list-style: none;
+  padding: 0 13px;
+}
+
+.raga-card > summary::-webkit-details-marker {
+  display: none;
+}
+
+.raga-index {
+  color: #a4ada2;
+  font-family: var(--serif);
+  font-size: 11px;
+}
+
+.raga-summary-name {
+  color: #405b48;
+  font-family: var(--serif);
+  font-size: 15px;
+}
+
+.raga-summary-name small {
+  color: #929a8f;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 9px;
+}
+
+.raga-thaat {
+  border-radius: 20px;
+  background: #f1f3eb;
+  color: #849080;
+  font-size: 8px;
+  margin-left: auto;
+  padding: 5px 8px;
+}
+
+.raga-status {
+  color: #9ba298;
+  font-size: 9px;
+  min-width: 90px;
+  text-align: right;
+}
+
+.raga-status-done {
+  color: #5c805e;
+  font-weight: 700;
+}
+
+.raga-practiced {
+  border-color: #cfddca;
+}
+
+.raga-detail {
+  border-top: 1px solid #eef0e8;
+  padding: 12px 14px 13px;
+}
+
+.raga-swara-note {
+  margin: 0 0 10px;
+  color: #7d887c;
+  font-size: 9px;
+}
+
+.raga-phrase-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.raga-phrase {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  gap: 6px;
+  border: 1px solid #edf0e8;
+  border-radius: 7px;
+  background: #fcfcf7;
+  padding: 9px;
+}
+
+.raga-phrase > span {
+  color: #8b9488;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.raga-phrase > strong {
+  min-height: 29px;
+  color: #395644;
+  font-family: var(--serif);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.55;
+}
+
+.phrase-play {
+  width: max-content;
+  border: 0;
+  border-radius: 5px;
+  background: #eaf0e8;
+  color: #58765b;
+  cursor: pointer;
+  font-size: 8px;
+  padding: 5px 7px;
+}
+
+.phrase-play:hover {
+  background: #dce8d9;
+}
+
+.raga-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.raga-card-footer > span {
+  color: #99a196;
+  font-size: 8px;
+}
+
+.raga-card-footer .button {
+  min-height: 30px;
+  font-size: 9px;
+  padding: 0 9px;
+}
+
+.syllabus-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 11px;
+  margin: 0 0 24px;
+}
+
+.syllabus-detail-card {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fffefa;
+  padding: 15px;
+}
+
+.syllabus-detail-card h2 {
+  margin-top: 6px;
+  font-size: 18px;
+}
+
+.syllabus-detail-intro,
+.swar-gyan-card > p:last-child {
+  margin: 7px 0 12px;
+  color: #828c82;
+  font-size: 9px;
+  line-height: 1.65;
+}
+
+.taal-row {
+  display: grid;
+  gap: 5px;
+  border-top: 1px solid #eff0e9;
+  padding: 9px 0;
+}
+
+.taal-row > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 5px;
+}
+
+.taal-row > div strong {
+  color: #46604b;
+  font-size: 10px;
+}
+
+.taal-row > div span,
+.taal-row > small {
+  color: #949c91;
+  font-size: 8px;
+}
+
+.taal-row > p {
+  color: #476149;
+  font-family: var(--serif);
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.alankar-row {
+  display: flex;
+  gap: 9px;
+  border-top: 1px solid #eff0e9;
+  padding: 8px 0;
+}
+
+.alankar-row > span {
+  color: #9ba498;
+  font-family: var(--serif);
+  font-size: 10px;
+}
+
+.alankar-row > div {
+  display: grid;
+  gap: 3px;
+}
+
+.alankar-row strong {
+  color: #476149;
+  font-family: var(--serif);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.alankar-row small {
+  color: #929a90;
+  font-size: 8px;
+  line-height: 1.5;
+}
+
+.swar-gyan-card {
+  grid-column: 1 / -1;
+  background: #f4f3ea;
+}
+
+.ear-training-card {
+  grid-column: 1 / -1;
+}
+
+.ear-training-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ear-training-controls > span {
+  color: #829083;
+  font-size: 9px;
+}
+
+.ear-feedback {
+  min-height: 15px;
+  margin: 9px 0;
+  color: #687b69;
+  font-size: 9px;
+}
+
+.ear-swara-options {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 11px;
+}
+
+.ear-swara-options button {
+  min-height: 33px;
+  border: 1px solid #e3e9df;
+  border-radius: 6px;
+  background: #fcfcf7;
+  color: #4a6650;
+  cursor: pointer;
+  font-family: var(--serif);
+  font-size: 12px;
+}
+
+.ear-swara-options button:hover:not(:disabled) {
+  border-color: #9fb69a;
+  background: #edf2e8;
+}
+
+.ear-swara-options button:disabled {
+  cursor: default;
+  opacity: 0.62;
+}
+
 .practice-card {
   min-width: 0;
   border: 1px solid var(--line);
@@ -1405,6 +1860,10 @@
     grid-template-columns: 1fr;
   }
 
+  .syllabus-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .pitch-card {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1589,6 +2048,26 @@
     padding: 17px;
   }
 
+  .raga-phrase-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .raga-phrase > strong {
+    min-height: 0;
+  }
+
+  .syllabus-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .swar-gyan-card {
+    grid-column: auto;
+  }
+
+  .ear-training-card {
+    grid-column: auto;
+  }
+
   .pitch-card {
     display: flex;
   }
@@ -1678,6 +2157,33 @@
   .practice-controls .button {
     flex: 1;
     padding: 0 9px;
+  }
+
+  .ear-swara-options {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .raga-card > summary {
+    gap: 7px;
+    padding: 0 9px;
+  }
+
+  .raga-summary-name {
+    font-size: 13px;
+  }
+
+  .raga-thaat {
+    font-size: 7px;
+    padding: 4px 6px;
+  }
+
+  .raga-status {
+    min-width: auto;
+    font-size: 8px;
+  }
+
+  .daily-plan-head {
+    flex-direction: column;
   }
 
   .session-footer {

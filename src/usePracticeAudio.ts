@@ -38,6 +38,36 @@ export function usePracticeAudio() {
     }
   }
 
+  async function playSequence(semitones: number[], tonic = 261.63, beatsPerMinute = 70) {
+    if (!semitones.length) {
+      setError('There are no notes in this phrase to play.')
+      return
+    }
+    try {
+      const context = getContext()
+      await context.resume()
+      const beat = 60 / beatsPerMinute
+      const start = context.currentTime + 0.05
+      semitones.forEach((semitone, index) => {
+        const onset = start + index * beat
+        const oscillator = context.createOscillator()
+        const gain = context.createGain()
+        oscillator.type = 'sine'
+        oscillator.frequency.value = tonic * 2 ** (semitone / 12)
+        gain.gain.setValueAtTime(0.0001, onset)
+        gain.gain.exponentialRampToValueAtTime(0.1, onset + 0.025)
+        gain.gain.exponentialRampToValueAtTime(0.0001, onset + beat * 0.88)
+        oscillator.connect(gain)
+        gain.connect(context.destination)
+        oscillator.start(onset)
+        oscillator.stop(onset + beat * 0.9)
+      })
+      setError('')
+    } catch {
+      setError('Audio could not start. Check your device volume and try again.')
+    }
+  }
+
   async function toggleDrone(tonic = 261.63) {
     if (droneOn) {
       droneRef.current.forEach((oscillator) => oscillator.stop())
@@ -116,7 +146,7 @@ export function usePracticeAudio() {
     void contextRef.current?.close()
   }, [])
 
-  return { droneOn, listening, pitch, error, playNote, toggleDrone, startListening, stopListening }
+  return { droneOn, listening, pitch, error, playNote, playSequence, toggleDrone, startListening, stopListening }
 }
 
 function detectPitch(samples: Float32Array, sampleRate: number): number | null {
