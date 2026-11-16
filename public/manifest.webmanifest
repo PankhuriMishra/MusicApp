@@ -1,0 +1,18 @@
+{
+  "name": "Sur — your riyaaz room",
+  "short_name": "Sur",
+  "description": "A private, offline singing practice room.",
+  "theme_color": "#f7f6f1",
+  "background_color": "#f7f6f1",
+  "display": "standalone",
+  "start_url": "./",
+  "scope": "./",
+  "icons": [
+    {
+      "src": "./favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

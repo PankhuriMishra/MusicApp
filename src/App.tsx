@@ -1,5 +1,8 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { exams, getSwaraFrequencies, noteNames, practiceTopics, tonics, type ExamLevel } from './music'
+import { createLocalProfile, readLocalProfile, resetLocalProfile, verifyLocalPin, type LocalProfile } from './localProfile'
+import { clearLocalRecordings, type LocalRecording } from './localRecordings'
+import { useLocalRecorder } from './useLocalRecorder'
 import { usePracticeAudio } from './usePracticeAudio'
 import './App.css'
 
@@ -10,6 +13,120 @@ type TopicsByExam = Record<ExamLevel, string[]>
 const statsKey = 'sur-practice-stats'
 const examKey = 'sur-exam'
 const topicsKey = 'sur-syllabus-topics'
+
+function App() {
+  const [storedProfile] = useState(() => {
+    try {
+      return { profile: readLocalProfile(), error: '' }
+    } catch (cause) {
+      return { profile: null, error: cause instanceof Error ? cause.message : 'Could not read the local profile.' }
+    }
+  })
+  const [profile, setProfile] = useState<LocalProfile | null>(storedProfile.profile)
+  const [unlocked, setUnlocked] = useState(false)
+  const [loadError, setLoadError] = useState(storedProfile.error)
+
+  if (loadError) {
+    return <ProfileGate profile={profile} initialError={loadError} onProfile={setProfile} onUnlock={() => setUnlocked(true)} onReset={() => { setProfile(null); setLoadError('') }} />
+  }
+
+  if (!profile || !unlocked) {
+    return <ProfileGate profile={profile} onProfile={setProfile} onUnlock={() => setUnlocked(true)} onReset={() => { setProfile(null); setUnlocked(false) }} />
+  }
+
+  return <PracticeApp studentName={profile.name} onLock={() => setUnlocked(false)} />
+}
+
+function ProfileGate({ profile, onProfile, onUnlock, onReset, initialError = '' }: {
+  profile: LocalProfile | null
+  onProfile: (profile: LocalProfile | null) => void
+  onUnlock: () => void
+  onReset: () => void
+  initialError?: string
+}) {
+  const [name, setName] = useState('')
+  const [pin, setPin] = useState('')
+  const [confirmPin, setConfirmPin] = useState('')
+  const [error, setError] = useState(initialError)
+  const [busy, setBusy] = useState(false)
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setError('')
+    if (!profile && !name.trim()) {
+      setError('Add a name to set up this practice profile.')
+      return
+    }
+    if (!/^\d{4,12}$/.test(pin)) {
+      setError('Use a passcode with 4 to 12 digits.')
+      return
+    }
+    if (!profile && pin !== confirmPin) {
+      setError('The passcodes do not match. Try again.')
+      return
+    }
+
+    setBusy(true)
+    try {
+      if (profile) {
+        if (!(await verifyLocalPin(profile, pin))) {
+          setError('That passcode did not match. Try again.')
+          return
+        }
+        onUnlock()
+      } else {
+        await createLocalProfile(name, pin)
+        const created = readLocalProfile()
+        if (!created) throw new Error('The local profile could not be saved. Check available device storage.')
+        onProfile(created)
+        onUnlock()
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not save the local profile on this device.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function resetDevice() {
+    if (!window.confirm('Reset Sur on this device? This permanently deletes the profile, practice lists, progress, and saved recordings.')) return
+    try {
+      setBusy(true)
+      await clearLocalRecordings()
+      resetLocalProfile()
+      onReset()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not reset the local data.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <main className="auth-page">
+      <section className="auth-card">
+        <div className="auth-brand"><span className="brand-mark">सा</span><span>sur<span className="brand-dot">.</span></span></div>
+        <p className="eyebrow">{profile ? 'WELCOME BACK' : 'ONE-TIME SETUP'}</p>
+        <h1>{profile ? `Namaste, ${profile.name}.` : 'Your own riyaaz room.'}</h1>
+        <p className="auth-description">{profile ? 'Enter your device passcode to open your private practice space.' : 'Create a local student profile. Your name, passcode, and practice data stay on this device.'}</p>
+        <form className="auth-form" onSubmit={(event) => void submit(event)}>
+          {!profile && <label>Student name<input autoComplete="name" autoFocus maxLength={32} value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Anaya" /></label>}
+          <label> {profile ? 'Device passcode' : 'Create a passcode'}
+            <input autoComplete="off" autoFocus={Boolean(profile)} inputMode="numeric" pattern="[0-9]*" type="password" minLength={4} maxLength={12} value={pin} onChange={(event) => setPin(event.target.value.replace(/\D/g, ''))} placeholder="4–12 digits" />
+          </label>
+          {!profile && <label>Confirm passcode<input autoComplete="off" inputMode="numeric" pattern="[0-9]*" type="password" minLength={4} maxLength={12} value={confirmPin} onChange={(event) => setConfirmPin(event.target.value.replace(/\D/g, ''))} placeholder="Enter it once more" /></label>}
+          {error && <p className="auth-error" role="alert">{error}</p>}
+          <button type="submit" className="button button-dark auth-submit" disabled={busy}>{busy ? 'Please wait…' : profile ? 'Unlock practice' : 'Create my practice space'} <span aria-hidden="true">→</span></button>
+        </form>
+        <div className="auth-privacy">
+          <strong>On this device only</strong>
+          <p>Sur works offline after it has been installed. The passcode is a screen lock, not encryption. Anyone with access to this device’s browser storage may be able to access or remove saved data.</p>
+        </div>
+        {(profile || initialError) && <button className="reset-device" type="button" onClick={() => void resetDevice()} disabled={busy}>Forgot passcode? Reset this device</button>}
+      </section>
+    </main>
+  )
+}
 
 function readStats(): PracticeStats {
   try {
@@ -47,7 +164,7 @@ function readTopics(): TopicsByExam {
   return Object.fromEntries(exams.map(({ id }) => [id, [...practiceTopics]])) as TopicsByExam
 }
 
-function App() {
+function PracticeApp({ studentName, onLock }: { studentName: string; onLock: () => void }) {
   const [view, setView] = useState<View>('today')
   const [todayDate] = useState(() => new Intl.DateTimeFormat('en-IN', { weekday: 'short', day: 'numeric', month: 'short' }).format(new Date()))
   const [exam, setExam] = useState<ExamLevel>(readExam)
@@ -58,6 +175,7 @@ function App() {
   const [targetNote, setTargetNote] = useState(0)
   const [practiceNote, setPracticeNote] = useState(0)
   const audio = usePracticeAudio()
+  const recorder = useLocalRecorder()
 
   const selectedExam = exams.find((item) => item.id === exam) ?? exams[0]
   const currentTopics = topicsByExam[exam]
@@ -96,6 +214,7 @@ function App() {
 
   function startPractice() {
     setView('practice')
+    void recorder.refresh()
   }
 
   function playNextNote() {
@@ -114,7 +233,7 @@ function App() {
         <nav className="main-nav" aria-label="Main navigation">
           <NavButton active={view === 'today'} onClick={() => setView('today')} icon="◷">Today</NavButton>
           <NavButton active={view === 'syllabus'} onClick={() => setView('syllabus')} icon="▤">My syllabus</NavButton>
-          <NavButton active={view === 'practice'} onClick={() => setView('practice')} icon="♫">Practice room</NavButton>
+          <NavButton active={view === 'practice'} onClick={startPractice} icon="♫">Practice room</NavButton>
           <NavButton active={view === 'progress'} onClick={() => setView('progress')} icon="↗">My progress</NavButton>
         </nav>
         <div className="sidebar-bottom">
@@ -136,12 +255,12 @@ function App() {
           <div className="breadcrumb"><span>Riyaz room</span><span className="crumb-slash">/</span><strong>{pageTitle(view)}</strong></div>
           <div className="topbar-right">
             <span className="today-date">{todayDate}</span>
-            <span className="avatar" aria-label="Student profile">S</span>
+            <button type="button" className="avatar" aria-label={`Lock Sur for ${studentName}`} onClick={onLock}>{studentName.charAt(0).toUpperCase()}</button>
           </div>
         </header>
 
         {view === 'today' && (
-          <TodayView exam={exam} chooseExam={chooseExam} selectedExam={selectedExam} stats={stats} startPractice={startPractice} />
+          <TodayView exam={exam} chooseExam={chooseExam} selectedExam={selectedExam} stats={stats} studentName={studentName} startPractice={startPractice} />
         )}
 
         {view === 'syllabus' && (
@@ -196,7 +315,7 @@ function App() {
               <div className="practice-card pitch-card">
                 <div className="card-kicker">SING BACK</div>
                 <h2>How does it feel?</h2>
-                <p className="card-description">Use your microphone for a pitch guide, not a performance score. Your voice stays in your browser and is never recorded.</p>
+                <p className="card-description">Live pitch feedback is not saved. Use the separate recorder below if you want to keep a take on this device.</p>
                 <div className={`pitch-display ${cents !== null && Math.abs(cents) < 35 ? 'pitch-match' : ''}`}>
                   <div className="pitch-ring"><span>{audio.pitch ? noteNames[nearestSwara(audio.pitch, swaraFrequencies)] : noteNames[targetNote]}</span></div>
                   <strong>{tuningMessage}</strong>
@@ -216,6 +335,25 @@ function App() {
                 {audio.error && <p className="audio-error" role="status">{audio.error}</p>}
               </div>
             </div>
+            <section className="recording-card" aria-labelledby="recording-title">
+              <div className="recording-heading">
+                <div>
+                  <p className="eyebrow">YOUR VOICE, YOUR DEVICE</p>
+                  <h2 id="recording-title">Save a singing practice</h2>
+                  <p className="recording-detail">Record a phrase, listen back, or download a copy. Audio stays in this browser on this device.</p>
+                </div>
+                <button type="button" className={`button ${recorder.recording ? 'button-recording' : 'button-dark'}`} onClick={() => recorder.recording ? recorder.stop() : void recorder.start()} disabled={recorder.busy}>
+                  <span aria-hidden="true">{recorder.recording ? '■' : '●'}</span>
+                  {recorder.recording ? `Stop · ${formatDuration(recorder.elapsedMs)}` : recorder.busy ? 'Saving…' : 'Start recording'}
+                </button>
+              </div>
+              {recorder.error && <p className="audio-error" role="status">{recorder.error}</p>}
+              <div className="recordings-list">
+                {recorder.recordings.map((item) => <RecordingRow key={item.id} recording={item} onDelete={() => void recorder.remove(item.id)} />)}
+                {!recorder.recordings.length && !recorder.error && <p className="recordings-empty">No recordings yet. Your practice recordings will appear here.</p>}
+              </div>
+              <p className="recordings-caveat">Microphone permission is requested only when you start recording. Recordings use device storage; export important takes because browser data can be cleared by device settings.</p>
+            </section>
             <div className="session-footer">
               <div><span className="session-check">✓</span><span><strong>Finished for today?</strong><small>Mark 15 minutes of practice complete.</small></span></div>
               <button type="button" className="button button-outline" onClick={completeSession}>Complete session <span aria-hidden="true">→</span></button>
@@ -246,17 +384,52 @@ function App() {
   )
 }
 
+function RecordingRow({ recording, onDelete }: { recording: LocalRecording; onDelete: () => void }) {
+  const audioRef = useRef<HTMLAudioElement>(null)
+  const downloadRef = useRef<HTMLAnchorElement>(null)
+
+  useEffect(() => {
+    const url = URL.createObjectURL(recording.blob)
+    if (audioRef.current) audioRef.current.src = url
+    if (downloadRef.current) downloadRef.current.href = url
+    return () => URL.revokeObjectURL(url)
+  }, [recording.blob])
+
+  return (
+    <div className="recording-row">
+      <div className="recording-meta">
+        <strong>{new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }).format(recording.createdAt)}</strong>
+        <span>{formatDuration(recording.durationMs)}</span>
+      </div>
+      <audio ref={audioRef} controls preload="metadata">Audio playback is not supported in this browser.</audio>
+      <a ref={downloadRef} className="recording-download" download={`sur-practice-${new Date(recording.createdAt).toISOString().slice(0, 10)}.${fileExtension(recording.mimeType)}`}>Download</a>
+      <button type="button" className="remove-topic" onClick={onDelete} aria-label="Delete this recording">×</button>
+    </div>
+  )
+}
+
+function formatDuration(milliseconds: number) {
+  const seconds = Math.floor(milliseconds / 1000)
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
+}
+
+function fileExtension(mimeType: string) {
+  if (mimeType.includes('webm')) return 'webm'
+  if (mimeType.includes('ogg')) return 'ogg'
+  return 'm4a'
+}
+
 function NavButton({ active, onClick, icon, children }: { active: boolean; onClick: () => void; icon: string; children: string }) {
   return <button type="button" className={`nav-button ${active ? 'nav-active' : ''}`} onClick={onClick}><span className="nav-icon" aria-hidden="true">{icon}</span>{children}{active && <span className="nav-active-mark" />}</button>
 }
 
-function TodayView({ exam, chooseExam, selectedExam, stats, startPractice }: { exam: ExamLevel; chooseExam: (exam: ExamLevel) => void; selectedExam: (typeof exams)[number]; stats: PracticeStats; startPractice: () => void }) {
+function TodayView({ exam, chooseExam, selectedExam, stats, studentName, startPractice }: { exam: ExamLevel; chooseExam: (exam: ExamLevel) => void; selectedExam: (typeof exams)[number]; stats: PracticeStats; studentName: string; startPractice: () => void }) {
   return (
     <section className="content-page today-page">
       <div className="welcome-row">
         <div>
           <p className="eyebrow">YOUR MUSIC, YOUR PACE</p>
-          <h1>Namaste, <em>singer.</em></h1>
+          <h1>Namaste, <em>{studentName}.</em></h1>
           <p className="welcome-copy">A little riyaaz every day makes room for something beautiful.</p>
         </div>
         <div className="today-sun" aria-hidden="true"><span>सा</span><i>♪</i></div>
