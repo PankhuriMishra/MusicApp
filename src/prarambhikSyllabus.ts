@@ -102,8 +102,12 @@ export function getRagaSemitones(sequence: string) {
   const swaraOffsets: Record<string, number> = {
     S: 0, r: 1, R: 2, g: 3, G: 4, M: 5, m: 6, P: 7, d: 8, D: 9, n: 10, N: 11,
   }
-  return Array.from(sequence.matchAll(/([rRgGmMPdDnNS])([′'’]?)/g), ([, swara, octave]) => {
-    const offset = swaraOffsets[swara]
-    return offset + (octave ? 12 : 0)
-  })
+  const notes: number[] = []
+  const pattern = /([rRgGmMPdDnNS])([′'’]?)/g
+  let match: RegExpExecArray | null
+  while ((match = pattern.exec(sequence)) !== null) {
+    const offset = swaraOffsets[match[1]]
+    notes.push(offset + (match[2] ? 12 : 0))
+  }
+  return notes
 }

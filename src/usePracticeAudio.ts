@@ -34,7 +34,7 @@ export function usePracticeAudio() {
       oscillator.type = 'sine'
       oscillator.frequency.value = frequency
       gain.gain.setValueAtTime(0.0001, context.currentTime)
-      gain.gain.exponentialRampToValueAtTime(0.12, context.currentTime + 0.04)
+      gain.gain.exponentialRampToValueAtTime(0.3, context.currentTime + 0.04)
       gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 1.15)
       oscillator.connect(gain)
       gain.connect(context.destination)
@@ -63,7 +63,7 @@ export function usePracticeAudio() {
         oscillator.type = 'sine'
         oscillator.frequency.value = tonic * 2 ** (semitone / 12)
         gain.gain.setValueAtTime(0.0001, onset)
-        gain.gain.exponentialRampToValueAtTime(0.1, onset + 0.025)
+        gain.gain.exponentialRampToValueAtTime(0.28, onset + 0.025)
         gain.gain.exponentialRampToValueAtTime(0.0001, onset + beat * 0.88)
         oscillator.connect(gain)
         gain.connect(context.destination)
@@ -91,7 +91,7 @@ export function usePracticeAudio() {
         const gain = context.createGain()
         oscillator.type = 'sine'
         oscillator.frequency.value = frequency
-        gain.gain.value = index === 0 ? 0.035 : 0.018
+        gain.gain.value = index === 0 ? 0.08 : 0.04
         oscillator.connect(gain)
         gain.connect(context.destination)
         oscillator.start()
