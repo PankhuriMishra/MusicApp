@@ -663,6 +663,7 @@ function formatDuration(milliseconds: number) {
 }
 
 function fileExtension(mimeType: string) {
+  if (mimeType.includes('wav')) return 'wav'
   if (mimeType.includes('webm')) return 'webm'
   if (mimeType.includes('ogg')) return 'ogg'
   return 'm4a'

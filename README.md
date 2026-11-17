@@ -27,9 +27,9 @@ Create a production build with `npm run build`.
 
 ## Offline use and installation
 
-Sur is a web app, not an emailed iOS installer. Open its secure HTTPS site once while online, then use the browser's **Add to Home Screen** option to install it. The app shell is cached on that first visit and its practice tools work offline afterward. Microphone access and recording require a browser/device that supports them; these capabilities vary by iOS version.
+Sur is a web app, not an emailed iOS installer. Open its secure HTTPS site once while online; you can keep using it directly in Safari without installing anything. Adding it to the Home Screen is optional. The app shell is cached on that first visit so its practice tools can work offline afterward. Allow microphone access in Safari when asked to record.
 
-The app's JavaScript and CSS are built for Safari 12, which includes the iPad mini 2 on iOS 12.5.8. Voice recording needs the MediaRecorder API, which is not available in that iOS version; use a newer iPad/iOS version for recording. The synthesized practice audio supports Safari's older prefixed Web Audio API where needed.
+The app's JavaScript and CSS are built for Safari 12, which includes the iPad mini 2 on iOS 12.5.8. On browsers without MediaRecorder, Sur records microphone audio through Web Audio and saves it locally as a 16 kHz WAV file. Synthesized practice audio also supports Safari's older prefixed Web Audio API. If Safari does not show a microphone prompt, check the iPad's Safari microphone permission in Settings.
 
 The profile, exam choice, practice lists, progress, and recordings stay in that browser on that device. They do not sync between devices and Sur does not upload them. Browser storage is not encrypted, and a device cleanup, browser reset, or uninstall may remove it. Export recordings you want to keep. The local passcode is only a casual screen lock, not strong security or encryption. If it is forgotten, resetting Sur deletes its local profile and practice data.
 
