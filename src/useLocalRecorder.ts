@@ -29,7 +29,7 @@ export function useLocalRecorder() {
 
   const start = useCallback(async () => {
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
-      setError('This browser does not support local audio recording. Try a newer browser or device.')
+      setError('This browser does not support the audio recording feature. Listening and other practice tools are still available.')
       return
     }
 

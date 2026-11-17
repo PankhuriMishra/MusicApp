@@ -29,6 +29,8 @@ Create a production build with `npm run build`.
 
 Sur is a web app, not an emailed iOS installer. Open its secure HTTPS site once while online, then use the browser's **Add to Home Screen** option to install it. The app shell is cached on that first visit and its practice tools work offline afterward. Microphone access and recording require a browser/device that supports them; these capabilities vary by iOS version.
 
+The app's JavaScript and CSS are built for Safari 12, which includes the iPad mini 2 on iOS 12.5.8. Voice recording needs the MediaRecorder API, which is not available in that iOS version; use a newer iPad/iOS version for recording. The synthesized practice audio supports Safari's older prefixed Web Audio API where needed.
+
 The profile, exam choice, practice lists, progress, and recordings stay in that browser on that device. They do not sync between devices and Sur does not upload them. Browser storage is not encrypted, and a device cleanup, browser reset, or uninstall may remove it. Export recordings you want to keep. The local passcode is only a casual screen lock, not strong security or encryption. If it is forgotten, resetting Sur deletes its local profile and practice data.
 
 Offline mode does not include ABGMVM's external website or other links; those require internet if opened. Fonts use local system fallbacks.

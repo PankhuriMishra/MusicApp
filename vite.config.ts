@@ -76,4 +76,8 @@ self.addEventListener('fetch', (event) => {
 export default defineConfig({
   base: './',
   plugins: [react(), offlineServiceWorker()],
+  build: {
+    target: 'safari12',
+    cssTarget: 'safari12',
+  },
 })

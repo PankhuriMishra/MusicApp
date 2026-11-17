@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { getSwaraFrequencies } from './music'
 
+type AudioContextWindow = Window & {
+  webkitAudioContext?: typeof AudioContext
+}
+
 export function usePracticeAudio() {
   const contextRef = useRef<AudioContext | null>(null)
   const droneRef = useRef<OscillatorNode[]>([])
@@ -12,7 +16,11 @@ export function usePracticeAudio() {
   const [error, setError] = useState('')
 
   function getContext() {
-    if (!contextRef.current) contextRef.current = new AudioContext()
+    if (!contextRef.current) {
+      const AudioContextConstructor = window.AudioContext ?? (window as AudioContextWindow).webkitAudioContext
+      if (!AudioContextConstructor) throw new Error('Web Audio is not supported in this browser.')
+      contextRef.current = new AudioContextConstructor()
+    }
     return contextRef.current
   }
 
