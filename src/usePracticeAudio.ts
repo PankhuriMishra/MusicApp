@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { getSwaraFrequencies } from './music'
+import { hasMicrophoneSupport, microphoneUnavailableMessage, requestMicrophone } from './microphone'
 
 type AudioContextWindow = Window & {
   webkitAudioContext?: typeof AudioContext
@@ -106,12 +107,12 @@ export function usePracticeAudio() {
   }
 
   async function startListening() {
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setError('Microphone access needs a secure connection and a supported browser.')
+    if (!hasMicrophoneSupport()) {
+      setError(microphoneUnavailableMessage())
       return
     }
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } })
+      const stream = await requestMicrophone({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } })
       const context = getContext()
       await context.resume()
       streamRef.current = stream
@@ -132,8 +133,10 @@ export function usePracticeAudio() {
         frameRef.current = requestAnimationFrame(readPitch)
       }
       frameRef.current = requestAnimationFrame(readPitch)
-    } catch {
-      setError('Microphone access was not available. Allow microphone access in your browser and try again.')
+    } catch (cause) {
+      setError(cause instanceof Error && cause.name === 'NotAllowedError'
+        ? 'Microphone permission was denied. Allow microphone access for Safari in Settings, then try again.'
+        : cause instanceof Error ? cause.message : 'Microphone access was not available. Allow microphone access in Safari and try again.')
       stopListening()
     }
   }

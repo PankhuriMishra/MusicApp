@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { deleteLocalRecording, listLocalRecordings, saveLocalRecording, type LocalRecording } from './localRecordings'
+import { hasMicrophoneSupport, microphoneUnavailableMessage, requestMicrophone } from './microphone'
 import { downsampleToPcm16, encodePcmWav } from './wavRecording'
 
 type AudioContextWindow = Window & {
@@ -65,8 +66,8 @@ export function useLocalRecorder() {
   }, [recording])
 
   const start = useCallback(async () => {
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setError('Microphone access is not available in this browser. Open Sur in Safari over HTTPS and allow microphone access.')
+    if (!hasMicrophoneSupport()) {
+      setError(microphoneUnavailableMessage())
       return
     }
 
@@ -85,7 +86,7 @@ export function useLocalRecorder() {
         context = new AudioContextConstructor()
         await context.resume()
       }
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      stream = await requestMicrophone({ audio: true })
       streamRef.current = stream
       chunksRef.current = []
       startedAtRef.current = Date.now()
