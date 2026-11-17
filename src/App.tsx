@@ -634,15 +634,43 @@ function EarTraining({ onPlaySequence }: { onPlaySequence: (phrase: string) => v
 }
 
 function RecordingRow({ recording, onDelete }: { recording: LocalRecording; onDelete: () => void }) {
-  const audioRef = useRef<HTMLAudioElement>(null)
-  const downloadRef = useRef<HTMLAnchorElement>(null)
+  const [mediaUrl, setMediaUrl] = useState('')
+  const [mediaError, setMediaError] = useState('')
+  const fallbackTriedRef = useRef(false)
 
   useEffect(() => {
-    const url = URL.createObjectURL(recording.blob)
-    if (audioRef.current) audioRef.current.src = url
-    if (downloadRef.current) downloadRef.current.href = url
-    return () => URL.revokeObjectURL(url)
+    let active = true
+    let objectUrl = ''
+    fallbackTriedRef.current = false
+
+    try {
+      objectUrl = URL.createObjectURL(recording.blob)
+      const url = objectUrl
+      void Promise.resolve().then(() => {
+        if (active) setMediaUrl(url)
+      })
+    } catch {
+      fallbackTriedRef.current = true
+      void readRecordingAsDataUrl(recording.blob).then((dataUrl) => {
+        if (active) setMediaUrl(dataUrl)
+      }).catch((cause: unknown) => {
+        if (active) setMediaError(cause instanceof Error ? cause.message : 'This recording could not be opened in Safari.')
+      })
+    }
+
+    return () => {
+      active = false
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
   }, [recording.blob])
+
+  function useDataUrlFallback() {
+    if (fallbackTriedRef.current || !mediaUrl.startsWith('blob:')) return
+    fallbackTriedRef.current = true
+    void readRecordingAsDataUrl(recording.blob).then(setMediaUrl).catch((cause: unknown) => {
+      setMediaError(cause instanceof Error ? cause.message : 'This recording could not be opened in Safari.')
+    })
+  }
 
   return (
     <div className="recording-row">
@@ -650,11 +678,24 @@ function RecordingRow({ recording, onDelete }: { recording: LocalRecording; onDe
         <strong>{new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }).format(recording.createdAt)}</strong>
         <span>{formatDuration(recording.durationMs)}</span>
       </div>
-      <audio ref={audioRef} controls preload="metadata">Audio playback is not supported in this browser.</audio>
-      <a ref={downloadRef} className="recording-download" download={`sur-practice-${new Date(recording.createdAt).toISOString().slice(0, 10)}.${fileExtension(recording.mimeType)}`}>Download</a>
+      {mediaUrl && <audio src={mediaUrl} controls preload="metadata" onError={useDataUrlFallback}>Audio playback is not supported in this browser.</audio>}
+      {mediaError && <p className="audio-error" role="status">{mediaError}</p>}
+      {mediaUrl && <a className="recording-download" href={mediaUrl} download={`sur-practice-${new Date(recording.createdAt).toISOString().slice(0, 10)}.${fileExtension(recording.mimeType)}`}>Download</a>}
       <button type="button" className="remove-topic" onClick={onDelete} aria-label="Delete this recording">×</button>
     </div>
   )
+}
+
+function readRecordingAsDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (typeof reader.result === 'string') resolve(reader.result)
+      else reject(new Error('Safari could not read this recording.'))
+    }
+    reader.onerror = () => reject(reader.error ?? new Error('Safari could not read this recording.'))
+    reader.readAsDataURL(blob)
+  })
 }
 
 function formatDuration(milliseconds: number) {
